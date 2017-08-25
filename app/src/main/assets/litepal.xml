@@ -1,0 +1,10 @@
+<litepal>
+    <dbname value="news_english"/>
+    <version value="1"/>
+    <list>
+        <mapping class= "com.newsenglish.gary.myapplication.db.SixMin"/>
+        <mapping class= "com.newsenglish.gary.myapplication.db.LocalEnglish"/>
+        <mapping class= "com.newsenglish.gary.myapplication.db.BbcNews"/>
+        <mapping class= "com.newsenglish.gary.myapplication.db.NewsWord"/>
+    </list>
+</litepal>
