@@ -120,12 +120,12 @@ public class MainActivity extends Activity implements View.OnClickListener {
         setContentView(R.layout.activity_main);
         context = MainActivity.this;
         initView();
-//        onBtnAndLineClear();
-//        onBtnAndLineClick(btnTxt1, lineTxt1);
-//        touchEvent();
-//        startPlayer();
-//        initGroupPoint();
-//        showInfo(TAB_TYPE_SIXMIN);
+        onBtnAndLineClear();
+        onBtnAndLineClick(btnTxt1, lineTxt1);
+        touchEvent();
+        startPlayer();
+        initGroupPoint();
+        showInfo(TAB_TYPE_SIXMIN);
 
     }
 
