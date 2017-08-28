@@ -24,15 +24,18 @@
                 android:background="#000" />
 
             <ListView
+                android:layout_below="@+id/web_line"
                 android:id="@+id/web_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="gone" />
-
+                android:visibility="visible"
+                android:divider="@null"
+                />
             <LinearLayout
                 android:id="@+id/web_item_layout"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:background="#fff"
                 android:orientation="vertical">
 
                 <TextView

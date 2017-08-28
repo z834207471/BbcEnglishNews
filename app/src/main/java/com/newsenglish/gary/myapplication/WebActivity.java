@@ -52,7 +52,7 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
     private MyPlayer player; // 播放器
     private SeekBar musicProgress; // 音乐进度
 
-    private String url ="";
+    private String url = "";
 
 
     private TextView enAndCh;
@@ -60,15 +60,16 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
     private TextView allTxt;
     private boolean isPlay = false;
     Handler handler = new Handler();
-    private  LinearLayout webLayout;
+    private LinearLayout webLayout;
     private ProgressBar progressBar;
-//设置菜单
+    //设置菜单
     private ListView weblistView;
     private ArrayAdapter adapter;
     private TextView webMenu;
     private LinearLayout webItemLayout;
     private boolean isOpen = false;
-    private String[] webname = {"BBC六分钟英语","BBC地道英语","BBC新闻","BBC新闻词汇"};
+    private String[] webname = {"BBC六分钟英语", "BBC地道英语", "BBC新闻", "BBC新闻词汇"};
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,7 +101,7 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
             }
             break;
         }
-        webTime.setText(webtypeStr+"\t\t\t"+webTimeStr);
+        webTime.setText(webtypeStr + "\t\t\t" + webTimeStr);
     }
 
     private void initEvent() {
@@ -118,7 +119,7 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
         webPicurl = getIntent().getStringExtra("webpic");
         webTimeStr = getIntent().getStringExtra("webtime");
         webType = getIntent().getIntExtra("webtype", 0);
-        url = "http://staticvip.iyuba.com/sounds/minutes/"+getIntent().getStringExtra("webmp3");
+        url = "http://staticvip.iyuba.com/sounds/minutes/" + getIntent().getStringExtra("webmp3");
         //初始化控件
         musicProgress = (SeekBar) findViewById(R.id.progressBar);
         webLayout = (LinearLayout) findViewById(R.id.web_layout);
@@ -141,7 +142,7 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
 
         weblistView = (ListView) findViewById(R.id.web_list);
         webItemLayout = (LinearLayout) findViewById(R.id.web_item_layout);
-        adapter = new ArrayAdapter(context,R.layout.name_item,webname);
+        adapter = new ArrayAdapter(context, R.layout.name_item, webname);
         weblistView.setAdapter(adapter);
         setView();
 
@@ -150,16 +151,18 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
         //初始化音乐播放器
         nowTime = (TextView) findViewById(R.id.nowtime);
         fullTime = (TextView) findViewById(R.id.fulltim);
-        player = new MyPlayer(musicProgress,nowTime,fullTime);
+        player = new MyPlayer(musicProgress, nowTime, fullTime);
 
 
     }
+
     Runnable playurlThread = new Runnable() {
         @Override
         public void run() {
             player.playUrl(url);
         }
     };
+
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
@@ -167,7 +170,7 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
                 if (isPlay == false) {
                     playBtn.setImageResource(R.mipmap.pause);
                     player.play();
-                    isPlay =true;
+                    isPlay = true;
                 } else {
                     playBtn.setImageResource(R.mipmap.play);
                     player.pause();
@@ -178,51 +181,61 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
             case R.id.en_ch: {
                 clearAllTxt();
                 selectTxt(enAndCh);
-            }break;
+            }
+            break;
             case R.id.en_txt: {
                 clearAllTxt();
                 selectTxt(englishTxt);
-            }break;
+            }
+            break;
             case R.id.all_txt: {
                 clearAllTxt();
                 selectTxt(allTxt);
-            }break;
+            }
+            break;
             case R.id.back_tomain: {
                 this.finish();
                 backImg.setVisibility(View.GONE);
-            }break;
+            }
+            break;
             case R.id.home: {
-                if (isOpen == false){
+                if (isOpen == false) {
                     isOpen = true;
                     showList();
-                }else {
+                } else {
                     isOpen = false;
                     hideList();
                 }
-            }break;
+            }
+            break;
         }
     }
-    private void clearAllTxt(){
+
+    private void clearAllTxt() {
         enAndCh.setBackgroundColor(getResources().getColor(R.color.unselect_color));
         englishTxt.setBackgroundColor(getResources().getColor(R.color.unselect_color));
         allTxt.setBackgroundColor(getResources().getColor(R.color.unselect_color));
     }
-    private void selectTxt(TextView txt){
+
+    private void selectTxt(TextView txt) {
         txt.setBackgroundColor(getResources().getColor(R.color.select_color));
     }
+
     //展示菜单
-    private void showList(){
-        ObjectAnimator anim = ObjectAnimator.ofFloat(webItemLayout, "translationY", 0.0F, weblistView.getDividerHeight()*1.0f)
+    private void showList() {
+        ObjectAnimator animaa = ObjectAnimator.ofFloat(webItemLayout,
+                "translationY", 0f, weblistView.getMeasuredHeight() * 1.0f)
+                .setDuration(1000);
+        animaa.start();
+    }
+
+    //隐藏菜单
+    private void hideList() {
+        ObjectAnimator anim = ObjectAnimator.ofFloat(webItemLayout, "translationY",weblistView.getMeasuredHeight() * 1.0f ,0.0F )
                 .setDuration(1000);
         anim.start();
     }
 
-    //隐藏菜单
-    private void hideList(){
-        ObjectAnimator anim = ObjectAnimator.ofFloat(webItemLayout, "rotationY", 0.0F, -(weblistView.getDividerHeight()*1.0f))
-                .setDuration(1000);
-        anim.start();
-    }
     // 进度改变
     class SeekBarChangeEvent implements SeekBar.OnSeekBarChangeListener {
         int progress;
@@ -247,14 +260,17 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
         }
 
     }
-    private void showProgress(){
+
+    private void showProgress() {
 
         progressBar.setVisibility(View.VISIBLE);
 
     }
-    private void hideProgress(){
+
+    private void hideProgress() {
         progressBar.setVisibility(View.GONE);
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
