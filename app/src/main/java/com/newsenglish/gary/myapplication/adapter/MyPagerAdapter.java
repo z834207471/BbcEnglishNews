@@ -57,7 +57,6 @@ public class MyPagerAdapter extends PagerAdapter {
             Glide.with(context).load(pics.get(newposition)).into(playerImg);
             playerTitle.setText(titles.get(newposition));
         }
-        RelativeLayout rlayout = view.findViewById(R.id.player_layout);
         container.addView(view);
         return view;
     }

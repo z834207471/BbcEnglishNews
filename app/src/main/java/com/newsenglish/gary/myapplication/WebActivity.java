@@ -28,6 +28,7 @@ import org.w3c.dom.Text;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.newsenglish.gary.myapplication.preferences.Preferences.DEFAULT_DURATION;
 import static com.newsenglish.gary.myapplication.preferences.Preferences.TAB_TYPE_BBCNEWS;
 import static com.newsenglish.gary.myapplication.preferences.Preferences.TAB_TYPE_LOCALENGLISH;
 import static com.newsenglish.gary.myapplication.preferences.Preferences.TAB_TYPE_NEWSWORD;
@@ -41,6 +42,7 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
     private String webTimeStr = "";
     private String webtypeStr = "";
     private int webType = 0;
+    private long click_time = 0;
 
     private ImageView webPic;
     private TextView webTitle;
@@ -152,6 +154,12 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
         nowTime = (TextView) findViewById(R.id.nowtime);
         fullTime = (TextView) findViewById(R.id.fulltim);
         player = new MyPlayer(musicProgress, nowTime, fullTime);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                handler.post(playurlThread);
+            }
+        });
 
 
     }
@@ -199,12 +207,14 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
             }
             break;
             case R.id.home: {
-                if (isOpen == false) {
-                    isOpen = true;
-                    showList();
-                } else {
-                    isOpen = false;
-                    hideList();
+                if (System.currentTimeMillis() - click_time > DEFAULT_DURATION) {
+                    if (isOpen == false) {
+                        isOpen = true;
+                        showList();
+                    } else {
+                        isOpen = false;
+                        hideList();
+                    }
                 }
             }
             break;
@@ -225,14 +235,14 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
     private void showList() {
         ObjectAnimator animaa = ObjectAnimator.ofFloat(webItemLayout,
                 "translationY", 0f, weblistView.getMeasuredHeight() * 1.0f)
-                .setDuration(1000);
+                .setDuration(500);
         animaa.start();
     }
 
     //隐藏菜单
     private void hideList() {
-        ObjectAnimator anim = ObjectAnimator.ofFloat(webItemLayout, "translationY",weblistView.getMeasuredHeight() * 1.0f ,0.0F )
-                .setDuration(1000);
+        ObjectAnimator anim = ObjectAnimator.ofFloat(webItemLayout, "translationY", weblistView.getMeasuredHeight() * 1.0f, 0.0F)
+                .setDuration(500);
         anim.start();
     }
 

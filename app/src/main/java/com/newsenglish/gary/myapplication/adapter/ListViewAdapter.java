@@ -1,6 +1,7 @@
 package com.newsenglish.gary.myapplication.adapter;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +12,8 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.newsenglish.gary.myapplication.R;
 import com.newsenglish.gary.myapplication.db.BbcData;
+import com.newsenglish.gary.myapplication.db.BbcNews;
+import com.newsenglish.gary.myapplication.db.SixMin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,14 +23,16 @@ import java.util.List;
  */
 
 public class ListViewAdapter extends BaseAdapter {
+    List a = new ArrayList< BbcNews>();
     private Context context;
     private List<BbcData> datalist;
-    public ListViewAdapter(Context context,ArrayList<BbcData> list) {
+    public ListViewAdapter(Context context) {
         this.context = context;
+    }
+    public void setListView(List<BbcData> list){
         if (datalist == null){
             this.datalist = list;
         }
-
     }
 
     @Override
@@ -65,6 +70,7 @@ public class ListViewAdapter extends BaseAdapter {
         viewholder.title.setText(datalist.get(i).getTitle());
         viewholder.time.setText(datalist.get(i).getTime());
         viewholder.readcount.setText(datalist.get(i).getReadCount());
+        Log.e("grgrgr", "getViewHeight: "+view.getMeasuredHeight() );
         return view;
     }
     public class bbcViewHolder{

@@ -69,7 +69,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private List<NewsWord> newswords;
     private List<SixMin> sixmins;
     private List<BbcData> dataList = new ArrayList<>();
-    private int currentpage = 0; //当前页
+    public int currentpage = 0; //当前页
     private int bodylengh = 0;  //展示长度
     private int j = 0;      //数据在数据库中的id
     private int currentType = 0;   //当前的news类型
@@ -106,7 +106,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private Runnable nextImg = new Runnable() {
         @Override
         public void run() {
-            currentImg = currentImg + 1;
+            currentImg++;
             vp.setCurrentItem(currentImg);
             clearRadioImgEnble();
             setCurrentRadioImgEnble(currentImg);
@@ -140,7 +140,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private void setVP(ArrayList<String> pics, ArrayList<String> titles) {
         adapter = new MyPagerAdapter(context, pics, titles);
         vp.setAdapter(adapter);
-        vp.setCurrentItem(currentImg);
         hideProgress();
         mainLayout.setVisibility(View.VISIBLE);
 
@@ -379,7 +378,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
         home.setText("Home");
 
         listView = findViewById(R.id.list_view);
-        listadapter = new ListViewAdapter(context, (ArrayList<BbcData>) dataList);
+        listadapter = new ListViewAdapter(context);
+        listadapter.setListView( dataList);
         listView.setAdapter(listadapter);
 
         backImg = findViewById(R.id.back_tomain);
