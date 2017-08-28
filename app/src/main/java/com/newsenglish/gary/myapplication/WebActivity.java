@@ -76,12 +76,7 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
         context = WebActivity.this;
         initView();
         initEvent();
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                handler.post(playurlThread);
-            }
-        });
+
     }
 
     private void setView() {
@@ -114,6 +109,7 @@ public class WebActivity extends AppCompatActivity implements View.OnClickListen
         englishTxt.setOnClickListener(this);
         allTxt.setOnClickListener(this);
         webMenu.setOnClickListener(this);
+        backImg.setOnClickListener(this);
     }
 
     private void initView() {
