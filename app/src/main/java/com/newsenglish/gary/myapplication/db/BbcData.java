@@ -3,31 +3,23 @@ package com.newsenglish.gary.myapplication.db;
 import org.litepal.crud.DataSupport;
 
 /**
- * Created by Gary on 2017/8/25.
+ * Created by Gary on 2017/8/27.
  */
 
-public class NewsWord extends DataSupport { private int id;
+public class BbcData {
     private String Title;
     private String Pic;
     private String Url;
     private String Time;
     private String ReadCount;
-    private String Mp3;
-
-    public String getMp3() {
-        return Mp3;
+    public BbcData(){}
+    public BbcData(String title, String pic, String time, String readcount) {
+        this.Title = title;
+        this.Time = time;
+        this.ReadCount = readcount;
+        this.Pic = pic;
     }
 
-    public void setMp3(String mp3) {
-        Mp3 = mp3;
-    }
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
 
     public String getTitle() {
         return Title;

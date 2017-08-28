@@ -21,7 +21,7 @@
         android:id="@+id/item_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginLeft="15dp"
+        android:layout_marginLeft="13dp"
         android:textColor="#000"
         android:textSize="18dp"
         android:text="daochu"
@@ -36,6 +36,7 @@
         android:layout_marginTop="15dp"
         android:textColor="@color/init_color"
         android:textSize="11dp"
+        android:layout_marginLeft="6dp"
         android:layout_alignLeft="@+id/item_title"/>
     <TextView
         android:id="@+id/item_line"
@@ -43,7 +44,8 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/item_title"
         android:text="|"
-        android:layout_marginLeft="3dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
         android:layout_marginTop="15dp"
         android:textColor="@color/init_color"
         android:textSize="11dp"

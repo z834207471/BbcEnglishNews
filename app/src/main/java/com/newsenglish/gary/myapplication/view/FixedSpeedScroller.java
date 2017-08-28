@@ -4,12 +4,14 @@ import android.content.Context;
 import android.view.animation.Interpolator;
 import android.widget.Scroller;
 
+import static com.newsenglish.gary.myapplication.preferences.Preferences.DEFAULT_DURATION;
+
 /**
  * Created by Gary on 2017/8/25.
  */
 
 public class FixedSpeedScroller extends Scroller {
-    private int mDuration = 1000;
+    private int mDuration = DEFAULT_DURATION;
     public FixedSpeedScroller(Context context) {
         super(context);
     }

@@ -9,13 +9,15 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 
 import java.lang.reflect.Field;
 
+import static com.newsenglish.gary.myapplication.preferences.Preferences.DEFAULT_DURATION;
+
 /**
  * Created by Gary on 2017/8/25.
  */
 
 public class MyViewPager extends ViewPager {
     private boolean noScroll = true;
-    private int defalutSpeed = 1000; //默认的滑动速度为1秒
+    private int defalutSpeed = DEFAULT_DURATION; //默认的滑动速度为1秒
     FixedSpeedScroller mScroller = null;
     private Context context;
     public MyViewPager(Context context) {

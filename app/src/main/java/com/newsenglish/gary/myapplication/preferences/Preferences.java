@@ -13,4 +13,6 @@ public class Preferences {
     public static final int TAB_TYPE_LOCALENGLISH = 1;
     public static final int TAB_TYPE_BBCNEWS = 2;
     public static final int TAB_TYPE_NEWSWORD = 3;
+    public static final int DEFAULT_DURATION = 1000;
+
 }

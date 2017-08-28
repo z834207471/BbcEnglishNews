@@ -4,4 +4,8 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
     <color name="init_color">#4e4e4e</color>
+    <color name="point_color">#696969</color>
+    <color name="unselect_color">#c9c9c9</color>
+    <color name="select_color">#7fb6e1</color>
+    <color name="bar_color">#009966</color>
 </resources>

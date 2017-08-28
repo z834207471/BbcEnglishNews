@@ -1,44 +1,42 @@
 package com.newsenglish.gary.myapplication;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Handler;
-import android.os.Message;
-import android.preference.PreferenceManager;
 import android.support.v4.view.ViewPager;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewParent;
-import android.widget.ArrayAdapter;
-import android.widget.FrameLayout;
+import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.RadioGroup;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.util.Util;
+import com.newsenglish.gary.myapplication.adapter.ListViewAdapter;
 import com.newsenglish.gary.myapplication.adapter.MyPagerAdapter;
 import com.newsenglish.gary.myapplication.db.BbcNews;
+import com.newsenglish.gary.myapplication.db.BbcData;
 import com.newsenglish.gary.myapplication.db.LocalEnglish;
 import com.newsenglish.gary.myapplication.db.NewsWord;
 import com.newsenglish.gary.myapplication.db.SixMin;
-import com.newsenglish.gary.myapplication.preferences.Preferences;
 import com.newsenglish.gary.myapplication.utils.HttpUtil;
 import com.newsenglish.gary.myapplication.utils.Utils;
 
 
 import org.litepal.crud.DataSupport;
-import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,6 +46,7 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
+import static com.newsenglish.gary.myapplication.preferences.Preferences.DEFAULT_DURATION;
 import static com.newsenglish.gary.myapplication.preferences.Preferences.TAB_TYPE_BBCNEWS;
 import static com.newsenglish.gary.myapplication.preferences.Preferences.TAB_TYPE_LOCALENGLISH;
 import static com.newsenglish.gary.myapplication.preferences.Preferences.TAB_TYPE_NEWSWORD;
@@ -55,34 +54,54 @@ import static com.newsenglish.gary.myapplication.preferences.Preferences.TAB_TYP
 
 
 public class MainActivity extends Activity implements View.OnClickListener {
+    //不解释
+    private Context context;
+    //导航栏
     private TextView btnTxt1, btnTxt2, btnTxt3, btnTxt4;
     private TextView lineTxt1, lineTxt2, lineTxt3, lineTxt4;
-    private TextView itemTitle, itemTime, itemReadcount;
-    private ImageView itemPic;
+    //加载失败
     private TextView fault;
-    private LinearLayout layoutItem;
-    private RelativeLayout viewLayout;
-    private Context context;
+    //列表
+    private ListView listView;
+    private ListViewAdapter listadapter;
     private List<BbcNews> bbcnews;
     private List<LocalEnglish> localenglishs;
     private List<NewsWord> newswords;
     private List<SixMin> sixmins;
-    private int currentpage = 0;
-    private int j = 0;
+    private List<BbcData> dataList = new ArrayList<>();
+    private int currentpage = 0; //当前页
+    private int bodylengh = 0;  //展示长度
+    private int j = 0;      //数据在数据库中的id
+    private int currentType = 0;   //当前的news类型
+    private int itemHeight = 0;    //item 的高度
 
+    //设置轮播
     private ViewPager vp;
     private MyPagerAdapter adapter;
     private ArrayList<String> pics = new ArrayList<>();
     private ArrayList<String> titles = new ArrayList<>();
+    private ArrayList<String> times = new ArrayList<>();
+    private ArrayList<String> mp3s = new ArrayList<>();
     private RelativeLayout outOfVPlayout;
-    private RelativeLayout rlayout;
     private RadioGroup radioGroup;
-    private int currentImg = 100;
-    private ImageView lastPic;
-    private ImageView nextPic;
+    private int currentImg = 100;  //当前页 为了防止用户向前翻  所以设置100
+    private ImageView lastPic;  //上一张图
+    private ImageView nextPic;  //下一张图
 
-    private TextView unClick;
+    private ImageView backImg;
 
+    private TextView unClick;    //设置点击事件
+
+    //上下页
+    private TextView lastPage;
+    private TextView nextPage;
+    //点击的时间 设置单例
+    private long click_time = 0;
+    private ImageView bottomImg;
+    private TextView home;
+    private ProgressBar progress;
+
+    private RelativeLayout mainLayout;
     private Handler handler = new Handler();
     private Runnable nextImg = new Runnable() {
         @Override
@@ -101,12 +120,13 @@ public class MainActivity extends Activity implements View.OnClickListener {
         setContentView(R.layout.activity_main);
         context = MainActivity.this;
         initView();
-        touchEvent();
         onBtnAndLineClear();
         onBtnAndLineClick(btnTxt1, lineTxt1);
-        showInfo(TAB_TYPE_SIXMIN);
+        touchEvent();
         startPlayer();
         initGroupPoint();
+        showInfo(TAB_TYPE_SIXMIN);
+
     }
 
     private void startPlayer() {
@@ -121,40 +141,33 @@ public class MainActivity extends Activity implements View.OnClickListener {
         adapter = new MyPagerAdapter(context, pics, titles);
         vp.setAdapter(adapter);
         vp.setCurrentItem(currentImg);
+        hideProgress();
+        mainLayout.setVisibility(View.VISIBLE);
 
     }
 
     private void showInfo(int type) {
-        layoutItem.removeAllViews();
         pics.clear();
         titles.clear();
+        dataList.clear();
+        times.clear();
         switch (type) {
             case TAB_TYPE_SIXMIN: {
+                currentType = TAB_TYPE_SIXMIN;
                 sixmins = DataSupport.findAll(SixMin.class);
                 if (sixmins.size() > 0) {
-                    int bodylengh = sixmins.size() > 6 ? 6 : sixmins.size();
+                    currentpage = makeSureCurrentPageIn(sixmins.size(), currentpage);
+                    bodylengh = currentpage < (sixmins.size() / 6) ? 6 : (sixmins.size() % 6);
                     for (int i = 0; i < bodylengh; i++) {
                         j = i + currentpage * 6;
-                        View view = LayoutInflater.from(context).inflate(R.layout.item_layout, null);
-                        itemPic = view.findViewById(R.id.item_pic);
-                        itemReadcount = view.findViewById(R.id.item_readcount);
-                        itemTime = view.findViewById(R.id.item_time);
-                        itemTitle = view.findViewById(R.id.item_title);
-                        viewLayout = view.findViewById(R.id.view_layout);
-                        itemTitle.setText(sixmins.get(j).getTitle());
-                        itemTime.setText(sixmins.get(j).getTime());
-                        itemReadcount.setText(sixmins.get(j).getReadCount());
-                        Glide.with(context).load(sixmins.get(j).getPic()).into(itemPic);
-                        viewLayout.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                Toast.makeText(context, "3", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                        layoutItem.addView(view);
+                        dataList.add(new BbcData(sixmins.get(j).getTitle(),sixmins.get(j).getPic(),
+                                Utils.fenge(sixmins.get(j).getTime()),getResources().getText(R.string.read) + sixmins.get(j).getReadCount()));
                         pics.add(sixmins.get(j).getPic());
                         titles.add(sixmins.get(j).getTitle());
+                        times.add(Utils.fenge(sixmins.get(j).getTime()));
+                        mp3s.add(sixmins.get(j).getMp3());
                     }
+                    setListView();
                     setVP(pics, titles);
                 } else {
                     int maxid = type;
@@ -163,31 +176,21 @@ public class MainActivity extends Activity implements View.OnClickListener {
             }
             break;
             case TAB_TYPE_LOCALENGLISH: {
+                currentType = TAB_TYPE_LOCALENGLISH;
                 localenglishs = DataSupport.findAll(LocalEnglish.class);
                 if (localenglishs.size() > 0) {
-                    int bodylengh = sixmins.size() > 6 ? 6 : sixmins.size();
+                    currentpage = makeSureCurrentPageIn(localenglishs.size(), currentpage);
+                    int bodylengh = currentpage < (localenglishs.size() / 6) ? 6 : (localenglishs.size() % 6);
                     for (int i = 0; i < bodylengh; i++) {
                         j = i + currentpage * 6;
-                        View view = LayoutInflater.from(context).inflate(R.layout.item_layout, null);
-                        itemPic = view.findViewById(R.id.item_pic);
-                        itemReadcount = view.findViewById(R.id.item_readcount);
-                        itemTime = view.findViewById(R.id.item_time);
-                        itemTitle = view.findViewById(R.id.item_title);
-                        viewLayout = view.findViewById(R.id.view_layout);
-                        itemTitle.setText(localenglishs.get(j).getTitle());
-                        itemTime.setText(localenglishs.get(j).getTime());
-                        itemReadcount.setText(localenglishs.get(j).getReadCount());
-                        Glide.with(context).load(localenglishs.get(j).getPic()).into(itemPic);
-                        viewLayout.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                Toast.makeText(context, "3", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                        layoutItem.addView(view);
+                        dataList.add(new BbcData(localenglishs.get(j).getTitle(),localenglishs.get(j).getPic(),
+                                Utils.fenge(localenglishs.get(j).getTime()),getResources().getText(R.string.read) + localenglishs.get(j).getReadCount()));
                         pics.add(localenglishs.get(j).getPic());
                         titles.add(localenglishs.get(j).getTitle());
+                        times.add(Utils.fenge(localenglishs.get(j).getTime()));
+                        mp3s.add(localenglishs.get(j).getMp3());
                     }
+                    setListView();
                     setVP(pics, titles);
                 } else {
                     int maxid = type;
@@ -196,64 +199,45 @@ public class MainActivity extends Activity implements View.OnClickListener {
             }
             break;
             case TAB_TYPE_BBCNEWS: {
+                currentType = TAB_TYPE_BBCNEWS;
                 bbcnews = DataSupport.findAll(BbcNews.class);
                 if (bbcnews.size() > 0) {
-                    int bodylengh = sixmins.size() > 6 ? 6 : sixmins.size();
+                    currentpage = makeSureCurrentPageIn(bbcnews.size(), currentpage);
+                    int bodylengh = currentpage < (bbcnews.size() / 6) ? 6 : (bbcnews.size() % 6);
                     for (int i = 0; i < bodylengh; i++) {
                         j = i + currentpage * 6;
-                        View view = LayoutInflater.from(context).inflate(R.layout.item_layout, null);
-                        itemPic = view.findViewById(R.id.item_pic);
-                        itemReadcount = view.findViewById(R.id.item_readcount);
-                        itemTime = view.findViewById(R.id.item_time);
-                        itemTitle = view.findViewById(R.id.item_title);
-                        viewLayout = view.findViewById(R.id.view_layout);
-                        itemTitle.setText(bbcnews.get(j).getTitle());
-                        itemTime.setText(bbcnews.get(j).getTime());
-                        itemReadcount.setText(bbcnews.get(j).getReadCount());
-                        Glide.with(context).load(bbcnews.get(j).getPic()).into(itemPic);
-                        viewLayout.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                Toast.makeText(context, "3", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                        layoutItem.addView(view);
+                        dataList.add(new BbcData(bbcnews.get(j).getTitle(),bbcnews.get(j).getPic(),
+                                Utils.fenge(bbcnews.get(j).getTime()),getResources().getText(R.string.read) + bbcnews.get(j).getReadCount()));
                         pics.add(bbcnews.get(j).getPic());
                         titles.add(bbcnews.get(j).getTitle());
+                        times.add(Utils.fenge(bbcnews.get(j).getTime()));
+                        mp3s.add(bbcnews.get(j).getMp3());
                     }
+                    setListView();
                     setVP(pics, titles);
                 } else {
                     int maxid = type;
                     queryFromServer(maxid, type);
                 }
+
             }
             break;
             case TAB_TYPE_NEWSWORD: {
                 newswords = DataSupport.findAll(NewsWord.class);
                 if (newswords.size() > 0) {
-                    int bodylengh = sixmins.size() > 6 ? 6 : sixmins.size();
+                    currentType = TAB_TYPE_NEWSWORD;
+                    currentpage = makeSureCurrentPageIn(newswords.size(), currentpage);
+                    int bodylengh = currentpage < (newswords.size() / 6) ? 6 : (newswords.size() % 6);
                     for (int i = 0; i < bodylengh; i++) {
                         j = i + currentpage * 6;
-                        View view = LayoutInflater.from(context).inflate(R.layout.item_layout, null);
-                        itemPic = view.findViewById(R.id.item_pic);
-                        itemReadcount = view.findViewById(R.id.item_readcount);
-                        itemTime = view.findViewById(R.id.item_time);
-                        itemTitle = view.findViewById(R.id.item_title);
-                        viewLayout = view.findViewById(R.id.view_layout);
-                        itemTitle.setText(newswords.get(j).getTitle());
-                        itemTime.setText(newswords.get(j).getTime());
-                        itemReadcount.setText(newswords.get(j).getReadCount());
-                        Glide.with(context).load(newswords.get(j).getPic()).into(itemPic);
-                        viewLayout.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                Toast.makeText(context, "3", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                        layoutItem.addView(view);
+                        dataList.add(new BbcData(newswords.get(j).getTitle(),newswords.get(j).getPic(),
+                                Utils.fenge(newswords.get(j).getTime()),getResources().getText(R.string.read) + newswords.get(j).getReadCount()));
                         pics.add(newswords.get(j).getPic());
                         titles.add(newswords.get(j).getTitle());
+                        times.add(Utils.fenge(newswords.get(j).getTime()));
+                        mp3s.add(newswords.get(j).getMp3());
                     }
+                    setListView();
                     setVP(pics, titles);
                 } else {
                     int maxid = type;
@@ -265,6 +249,41 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
     }
 
+    private void setListView() {
+        listadapter.notifyDataSetChanged();
+        itemHeight = bodylengh * Utils.dip2px(context,90);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                getMetricsWidthAndHeight().get(0), itemHeight);
+        listView.setLayoutParams(lp);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                Intent intent = new Intent(context,WebActivity.class);
+                intent.putExtra("webtitle",titles.get(i));
+                intent.putExtra("webpic",pics.get(i));
+                intent.putExtra("webtime",times.get(i));
+                intent.putExtra("webmp3",mp3s.get(i));
+                intent.putExtra("webtype",currentType);
+                startActivity(intent);
+            }
+        });
+    }
+
+    /**
+     * 保证currentPage的范围
+     */
+    private int makeSureCurrentPageIn(int max, int nowpage) {
+        if (nowpage < 0) {
+            nowpage = 0;
+            Toast.makeText(context, "已经是第一页了", Toast.LENGTH_SHORT).show();
+        } else if (nowpage > max / 6) {
+            Toast.makeText(context, "已经是最后一页了", Toast.LENGTH_SHORT).show();
+            nowpage = max / 6;
+        } else {
+            nowpage = nowpage;
+        }
+        return nowpage;
+    }
 
     private void queryFromServer(int maxid, final int type) {
         String url = "http://apps.iyuba.com/minutes/titleNewApi.jsp?maxid=" + maxid + "&format=xml&type=android";
@@ -313,12 +332,23 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
         //防止viewpager滑动时用户点击img会卡住的问题
         unClick.setOnClickListener(this);
+
+        //上下页的点击事件
+        nextPage.setOnClickListener(this);
+        lastPage.setOnClickListener(this);
+
+        bottomImg.setOnClickListener(this);
+        home.setOnClickListener(this);
     }
 
     /**
      * 初始化控件
      */
     private void initView() {
+        progress = findViewById(R.id.progress);
+        showProgress();
+        mainLayout = findViewById(R.id.main_layout);
+        mainLayout.setVisibility(View.INVISIBLE);
         btnTxt1 = findViewById(R.id.btn_txt1);
         btnTxt2 = findViewById(R.id.btn_txt2);
         btnTxt3 = findViewById(R.id.btn_txt3);
@@ -328,11 +358,9 @@ public class MainActivity extends Activity implements View.OnClickListener {
         lineTxt3 = findViewById(R.id.line_txt3);
         lineTxt4 = findViewById(R.id.line_txt4);
         fault = findViewById(R.id.text_fault);
-        layoutItem = findViewById(R.id.item_layout);
 
         vp = findViewById(R.id.viewpager);
         outOfVPlayout = findViewById(R.id.outofvp_layout);
-        rlayout = findViewById(R.id.radio_group_layout);
         radioGroup = findViewById(R.id.radio_group);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 getMetricsWidthAndHeight().get(0), getMetricsWidthAndHeight().get(0) * 5 / 9);
@@ -342,6 +370,20 @@ public class MainActivity extends Activity implements View.OnClickListener {
         nextPic = findViewById(R.id.next_img);
 
         unClick = findViewById(R.id.unclick);
+
+        lastPage = findViewById(R.id.last_page);
+        nextPage = findViewById(R.id.next_page);
+
+        bottomImg = findViewById(R.id.bottom_img);
+        home = findViewById(R.id.home);
+        home.setText("Home");
+
+        listView = findViewById(R.id.list_view);
+        listadapter = new ListViewAdapter(context, (ArrayList<BbcData>) dataList);
+        listView.setAdapter(listadapter);
+
+        backImg = findViewById(R.id.back_tomain);
+        backImg.setVisibility(View.GONE);
     }
 
     /**
@@ -377,11 +419,21 @@ public class MainActivity extends Activity implements View.OnClickListener {
         if (radioGroup.getChildAt(currentchild % 4) != null)
             radioGroup.getChildAt(currentchild % 4).setEnabled(false);
     }
-    private void clearRadioImgEnble(){
-        if (radioGroup.getChildCount() == 4){
-            for (int i = 0; i < 4;i++)
-            radioGroup.getChildAt(i).setEnabled(true);
+
+    private void clearRadioImgEnble() {
+        if (radioGroup.getChildCount() == 4) {
+            for (int i = 0; i < 4; i++)
+                radioGroup.getChildAt(i).setEnabled(true);
         }
+    }
+
+    private void showProgress(){
+
+        progress.setVisibility(View.VISIBLE);
+
+    }
+    private void hideProgress(){
+        progress.setVisibility(View.GONE);
     }
     /**
      * 点击事件的具体实现
@@ -421,28 +473,65 @@ public class MainActivity extends Activity implements View.OnClickListener {
             }
             break;
             case R.id.last_img: {
-                handler.removeCallbacks(nextImg);
-                currentImg = currentImg - 1;
-                clearRadioImgEnble();
-                setCurrentRadioImgEnble(currentImg);
-                vp.setCurrentItem(currentImg);
-                handler.postDelayed(nextImg, 4000);
+                if (System.currentTimeMillis() - click_time > DEFAULT_DURATION) {
+                    handler.removeCallbacks(nextImg);
+                    currentImg = currentImg - 1;
+                    clearRadioImgEnble();
+                    setCurrentRadioImgEnble(currentImg);
+                    vp.setCurrentItem(currentImg);
+                    handler.postDelayed(nextImg, 4000);
+                    click_time = System.currentTimeMillis();
+                }
             }
             break;
             case R.id.next_img: {
-                handler.removeCallbacks(nextImg);
-                currentImg = currentImg + 1;
-                clearRadioImgEnble();
-                setCurrentRadioImgEnble(currentImg);
-                vp.setCurrentItem(currentImg);
-                handler.postDelayed(nextImg, 4000);
+                if (System.currentTimeMillis() - click_time > DEFAULT_DURATION) {
+                    handler.removeCallbacks(nextImg);
+                    currentImg = currentImg + 1;
+                    clearRadioImgEnble();
+                    setCurrentRadioImgEnble(currentImg);
+                    vp.setCurrentItem(currentImg);
+                    handler.postDelayed(nextImg, 4000);
+                    click_time = System.currentTimeMillis();
+                }
             }
             break;
             case R.id.unclick: {
-                Intent intent = new Intent(this,WebActivity.class);
+                Intent intent = new Intent(context,WebActivity.class);
+                intent.putExtra("webtitle",titles.get(currentImg%4));
+                intent.putExtra("webpic",pics.get(currentImg%4));
+                intent.putExtra("webtitle",titles.get(currentImg%4));
+                intent.putExtra("webtype",currentType);
                 startActivity(intent);
             }
             break;
+            case R.id.last_page: {
+                currentpage--;
+                showInfo(currentType);
+            }
+            break;
+            case R.id.next_page: {
+                currentpage++;
+                showInfo(currentType);
+            }
+            break;
+            case R.id.bottom_img: {
+                Intent intent = new Intent();
+                intent.setAction("android.intent.action.VIEW");
+                Uri content_url = Uri.parse("http://a.app.qq.com/o/simple.jsp?pkgname=com.iyuba.bbcinone");
+                intent.setData(content_url);
+                startActivity(intent);
+            }
+            break;
+            case R.id.home:
+//                Intent intent= new Intent(context,AiyuActivity.class);
+//                intent.putExtra("homeurl","http://m.iyuba.com/#");
+//                startActivity(intent);
+                Intent intent = new Intent();
+                intent.setAction("android.intent.action.VIEW");
+                Uri content_url = Uri.parse("http://m.iyuba.com/#");
+                intent.setData(content_url);
+                startActivity(intent);
         }
     }
 
@@ -493,4 +582,6 @@ public class MainActivity extends Activity implements View.OnClickListener {
         list.add(dm.heightPixels);
         return list;
     }
+
+
 }
